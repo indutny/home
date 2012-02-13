@@ -1,5 +1,6 @@
 !function() {
   paper.setup('drawer');
+  var socket = io.connect();
 
   var length = {
     hand: 4.5,
@@ -115,6 +116,8 @@
     this._changed = false;
     this.place = 'basement';
     this.activate('standby');
+
+    this.move(paper.view.center.add(-220, 36));
   };
 
   Man.prototype.activate = function activate(mode) {
@@ -123,6 +126,7 @@
     this._index = 0;
     this.tick();
     this.draw();
+    socket.emit('guy:mode', mode);
   };
 
   Man.prototype.move = function move(pos) {
@@ -132,6 +136,7 @@
   Man.prototype.add = function add(vector) {
     this._changed = true;
     this.position = this.position.add(vector);
+    socket.emit('guy:add', { x: vector.x, y: vector.y });
   };
 
   Man.prototype.tick = function tick() {
@@ -154,13 +159,17 @@
     group.position.y -= group.bounds.height;
   };
 
-  var man = new Man();
-  man.move(paper.view.center.add(-220, 36));
+  var man = new Man(),
+      ghosts = [],
+      ghostsMap = {};
 
   var i = 0;
   setInterval(function() {
     if (i++ % 2 === 0) {
       man.tick();
+      ghosts.forEach(function(ghost) {
+        ghost.tick();
+      });
     }
 
     if (man.place === 'basement') {
@@ -212,6 +221,9 @@
 
   paper.view.onFrame = function() {
     man.draw();
+    ghosts.forEach(function(ghost) {
+      ghost.draw();
+    });
   };
 
   var shown = false;
@@ -225,6 +237,8 @@
       contacts.className = 'visible full';
     }, 3);
   }
+
+  // Controlling our guy
 
   var keyMap = {
     37: 'left',
@@ -252,6 +266,34 @@
       man.activate('standby');
     }
   }, true);
+
+  // Displaying ghosts
+  socket.on('guy:enter', function(guy) {
+    // Ignore myself
+    if (guy.id === socket.socket.sessionid) return;
+    ghosts.push(ghostsMap[guy.id] = new Man());
+  });
+
+  socket.on('guy:leave', function(guy) {
+    if (!ghostsMap[guy.id]) return;
+    var ghost = ghostsMap[guy.id],
+        index = ghosts.indexOf(ghost);
+
+    delete ghostsMap[guy.id];
+
+    if (index === -1) return;
+    ghosts.splice(index, 1);
+  });
+
+  socket.on('guy:mode', function(guy) {
+    if (!ghostsMap[guy.id]) return;
+    ghostsMap[guy.id].activate(guy.mode);
+  });
+
+  socket.on('guy:add', function(guy) {
+    if (!ghostsMap[guy.id]) return;
+    ghostsMap[guy.id].add(new paper.Point(guy.position));
+  });
 
   paper.view.draw();
 }();
