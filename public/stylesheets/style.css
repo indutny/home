@@ -1,0 +1,152 @@
+body {
+  font: 14px Helvetica;
+  margin: 0;
+  padding: 0;
+  background: #3B5078 url(/images/bg.png) 50% 50% repeat;
+}
+
+a {
+  color: #2B304A;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #3B5078;
+  text-decoration: underline;
+}
+
+section#content-wrap {
+  position: absolute;
+  width: 560px;
+  height: 346px;
+  margin-top: -178px;
+  margin-left: -280px;
+  top: 50%;
+  left: 50%;
+}
+
+section#content {
+  position: relative;
+  box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -o-box-sizing: border-box;
+
+  width: 560px;
+  height: 346px;
+
+  padding: 8px;
+  background: #fff;
+
+  text-align:center;
+
+  border-radius: 4px;
+  box-shadow: 0 0 14px rgba(255,255,255,0.4);
+}
+
+section#content:before, section#content:after {
+  position: absolute;
+  bottom: 0;
+  content: '';
+  z-index: -1;
+  background: rgba(0,0,0,0.3);
+
+  width: 70%;
+  height: 30%;
+
+  border-radius: 4px;
+  box-shadow: 0 -8px 8px rgba(0,0,0,0.1);
+  -webkit-transform: skew(15deg);
+  -moz-transform: skew(15deg);
+  -o-transform: skew(15deg);
+  transform: skew(15deg);
+}
+
+section#content:before {
+  left: -14px;
+}
+
+section#content:after {
+  right: -14px;
+  -webkit-transform: skew(-15deg);
+  -moz-transform: skew(-15deg);
+  -o-transform: skew(-15deg);
+  transform: skew(-15deg);
+}
+
+section#content img {
+  display: block;
+  position: absolute;
+  width: 409px;
+  height: 115px;
+  top: 115px;
+  left: 75px;
+
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag:none;
+}
+
+section#contacts {
+  display: none;
+  opacity: 0;
+
+  z-index: 2;
+  position: absolute;
+  left: 0;
+  bottom: 46px;
+  width: 100%;
+  text-align: center;
+}
+
+section#contacts.visible {
+  display: block;
+  transition: opacity ease-in 0.5s;
+  -webkit-transition: opacity ease-in 0.5s;
+  -moz-transition: opacity ease-in 0.5s;
+}
+
+section#contacts.visible.full {
+  opacity: 1;
+}
+
+
+section#contacts .contact {
+  display: inline-block;
+  margin: 0 32px;
+  padding: 0 6px 0 24px;
+  height: 24px;
+  line-height: 24px;
+  background: transparent url() no-repeat 3px 50%;
+
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  -o-border-radius: 3px;
+
+  box-shadow: inset 0 0 7px rgba(0, 0, 0, 0.05);
+}
+
+section#contacts .contact.github {
+  background-image: url(https://github.com/favicon.ico);
+}
+
+section#contacts .contact.geeklist {
+  background-image: url(http://geekli.st/favicon.ico);
+}
+
+section#contacts .contact.twitter {
+  background-image: url(https://twitter.com/phoenix/favicon.ico);
+}
+
+section#content canvas {
+  top: 0;
+  left: 0;
+  position: absolute;
+}
