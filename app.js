@@ -34,18 +34,39 @@ app.get('/', routes.index);
 
 io = io.listen(app);
 
+var guys = [],
+    guysMap = {};
+
+function Guy(id) {
+  this.id = id;
+  this.mode = 'standby';
+  this.position = { x: 0, y: 0 };
+};
+
 io.sockets.on('connection', function(socket) {
   io.sockets.emit('guy:enter', { id: socket.id });
 
+  guys.forEach(function(guy) {
+    socket.emit('guy:enter', { id: guy.id });
+    socket.emit('guy:mode', { id: guy.id, mode: guy.mode });
+    socket.emit('guy:move', { id: guy.id, position: guy.position });
+  });
+  guys.push(guysMap[socket.id] = new Guy(socket.id));
+
   socket.on('guy:mode', function(mode) {
+    guysMap[socket.id].mode = mode;
     io.sockets.emit('guy:mode', { id: socket.id, mode: mode });
   });
 
-  socket.on('guy:add', function(pos) {
-    io.sockets.emit('guy:add', { id: socket.id, position: pos });
+  socket.on('guy:move', function(position) {
+    guysMap[socket.id].position = position;
+    io.sockets.emit('guy:move', { id: socket.id, position: position });
   });
 
   socket.on('disconnect', function() {
+    var guy = guysMap[socket.id];
+    delete guysMap[socket.id];
+    guys.splice(guys.indexOf(guy), 1);
     io.sockets.emit('guy:leave', { id: socket.id });
   });
 });

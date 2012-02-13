@@ -126,7 +126,11 @@
     this._index = 0;
     this.tick();
     this.draw();
-    socket.emit('guy:mode', mode);
+    if (this === man) socket.emit('guy:mode', mode);
+  };
+
+  Man.prototype.remove = function remove() {
+    if (this._current) this._current.group.remove();
   };
 
   Man.prototype.move = function move(pos) {
@@ -136,7 +140,9 @@
   Man.prototype.add = function add(vector) {
     this._changed = true;
     this.position = this.position.add(vector);
-    socket.emit('guy:add', { x: vector.x, y: vector.y });
+    if (this === man) {
+      socket.emit('guy:move', { x: this.position.x, y: this.position.y });
+    }
   };
 
   Man.prototype.tick = function tick() {
@@ -279,6 +285,7 @@
     var ghost = ghostsMap[guy.id],
         index = ghosts.indexOf(ghost);
 
+    ghost.remove();
     delete ghostsMap[guy.id];
 
     if (index === -1) return;
@@ -290,9 +297,9 @@
     ghostsMap[guy.id].activate(guy.mode);
   });
 
-  socket.on('guy:add', function(guy) {
+  socket.on('guy:move', function(guy) {
     if (!ghostsMap[guy.id]) return;
-    ghostsMap[guy.id].add(new paper.Point(guy.position));
+    ghostsMap[guy.id].move(new paper.Point(guy.position));
   });
 
   paper.view.draw();
