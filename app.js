@@ -53,12 +53,12 @@ if (cluster.isMaster) {
         id = c.remoteAddress.replace(/^.+\./, '');
 
     if (!sticky[id]) {
-      sticky[id] = stickyId++ % workers.length;
+      sticky[id] = workers[stickyId++ % workers.length];
     }
     worker = sticky[id];
 
     c.pause();
-    workers[0].send('connection', c._handle);
+    worker.send('connection', c._handle);
     c._handle.close();
   }).listen(3000);
 } else {
