@@ -3,8 +3,10 @@
  * Module dependencies.
  */
 
-var express = require('express'),
+var os = require('os'),
+    express = require('express'),
     io = require('socket.io'),
+    cluster = require('cluster'),
     routes = require('./routes');
 
 var app = module.exports = express.createServer();
@@ -45,10 +47,24 @@ require('./home/realtime').init(io, {
   }
 });
 
-app.listen(3000, function() {
-  console.log(
-    "Express server listening on port %d in %s mode",
-    app.address().port,
-    app.settings.env
-  );
-});
+if (cluster.isMaster) {
+  var cpus = os.cpus().length;
+  for (var i = 0; i < cpus; i++) {
+    cluster.fork();
+  }
+
+  cluster.on('death', function() {
+    console.error('worker died');
+    setTimeout(function() {
+      cluster.fork();
+    }, 500);
+  });
+} else {
+  app.listen(3000, function() {
+    console.log(
+      "Express server listening on port %d in %s mode",
+      app.address().port,
+      app.settings.env
+    );
+  });
+}
