@@ -146,14 +146,16 @@ GuysPool.prototype.onMessage = function onMessage(channel, data) {
       msg = JSON.parse(data);
 
   if (msg[0] === 'bootstrap') {
+    if (msg[1] === this.id) return;
     this.publish.publish(
       this.options.redis.channel,
-      JSON.stringify(['bootstrap:reply', this.id, this.pool])
+      JSON.stringify(['bootstrap:reply', msg[1], this.pool])
     );
     return;
   }
 
-  if (msg[0] === 'bootstrap:reply' && msg[1] !== this.id) {
+  if (msg[0] === 'bootstrap:reply') {
+    if (msg[1] !== this.id) return;
     msg[2].forEach(function(guy) {
       if (self.map[guy.id]) return;
       self.insert(guy);
@@ -207,6 +209,7 @@ GuysPool.prototype.onMessage = function onMessage(channel, data) {
 
 GuysPool.prototype.manageIo = function manageIo(io) {
   var self = this;
+
   io.sockets.on('connection', function(socket) {
     var bulk = [];
     self.pool.forEach(function(guy) {
