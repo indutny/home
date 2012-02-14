@@ -140,7 +140,13 @@
   };
 
   Man.prototype.move = function move(pos) {
-    if (pos) this.position = pos;
+    if (pos) {
+      if (this.position) {
+        this.position = pos;
+      } else {
+        this.position = new paper.Point(pos);
+      }
+    }
     this.message.position = this.position.add({ x: 0, y: -40 });
     if (this === man) {
       socket.emit('guy:move', { x: this.position.x, y: this.position.y });
@@ -362,7 +368,7 @@
 
   socket.on('guy:move', function(guy) {
     if (!ghostsMap[guy.id]) return;
-    ghostsMap[guy.id].move(new paper.Point(guy.position));
+    ghostsMap[guy.id].move(guy.position);
   });
 
   socket.on('guy:say', function(guy) {
