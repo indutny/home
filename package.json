@@ -5,6 +5,8 @@
   "dependencies": {
     "express": "2.5.x",
     "jade": ">= 0.0.1",
-    "socket.io": "0.8.x"
+    "socket.io": "0.8.x",
+    "redis": "0.7.x",
+    "hiredis": "0.1.x"
   }
 }

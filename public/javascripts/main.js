@@ -338,7 +338,7 @@
   window.addEventListener('keypress', function(e) {
     if (e.keyCode === 13) return man.stopSaying();
     var char = String.fromCharCode(e.charCode);
-    if (!/[\w\s\.?!,&^%$#@<>(){}"':\\/;]/.test(char)) return;
+    if (!/[\w\s\.\-?!,&^%$#@<>(){}"':\\/;]/.test(char)) return;
 
     man.say(char);
   }, true);
