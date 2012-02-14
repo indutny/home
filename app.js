@@ -79,12 +79,12 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('guy:backspaceSaying', function() {
-    guysMap[socket.id].text = '';
+    guysMap[socket.id].text = guysMap[socket.id].text.slice(0, -1);
     io.sockets.emit('guy:backspaceSaying', { id: socket.id });
   });
 
   socket.on('guy:stopSaying', function() {
-    guysMap[socket.id].text = guysMap[socket.id].text.slice(0, -1);
+    guysMap[socket.id].text = '';
     io.sockets.emit('guy:stopSaying', { id: socket.id });
   });
 
