@@ -58,6 +58,7 @@ if (cluster.isMaster) {
 
     c.pause();
     workers[0].send('connection', c._handle);
+    c._handle.close();
   }).listen(3000);
 } else {
   io = io.listen(app);
