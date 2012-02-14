@@ -35,6 +35,11 @@ footer .twitter {
   margin-top: 2px;
 }
 
+footer .gplus {
+  position: relative;
+  top: -2px;
+}
+
 section#content-wrap {
   position: absolute;
   width: 560px;
