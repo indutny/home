@@ -223,7 +223,7 @@
     if (man.place === 'basement') {
       if (man.position.x > 79) {
         if (man.position.y - 1.7 >= 123) {
-          man.add(new paper.Point(0, -1.7));
+          man.add({ x: 0, y: -1.7 });
           return;
         } else {
           man.place = 'lift';
@@ -251,7 +251,7 @@
     } else if (man.place === 'roof') {
       if (man.position.x <= 82) {
         if (man.position.y + 1.7 <= 235) {
-          man.add(new paper.Point(0, 1.7));
+          man.add({ x: 0, y: 1.7 });
           return;
         } else {
           man.place = 'lift';
@@ -265,9 +265,9 @@
     }
 
     if (man.mode === 'walkLeft') {
-      man.add(new paper.Point(-0.75, 0));
+      man.add({ x: -0.75, y: 0 });
     } else if (man.mode === 'walkRight') {
-      man.add(new paper.Point(0.75, 0));
+      man.add({ x: 0.75, y: 0 });
     }
   }, 20);
 
