@@ -140,8 +140,11 @@
   };
 
   Man.prototype.move = function move(pos) {
-    this.position = pos;
+    if (pos) this.position = pos;
     this.message.position = this.position.add({ x: 0, y: -40 });
+    if (this === man) {
+      socket.emit('guy:move', { x: this.position.x, y: this.position.y });
+    }
   };
 
   Man.prototype.add = function add(vector) {
@@ -216,6 +219,7 @@
         } else {
           man.place = 'lift';
           man.position.y = 123;
+          man.move();
         }
       } else if (man.position.x <= 22 && man.mode === 'walkLeft') {
         return;
@@ -241,8 +245,9 @@
           man.add(new paper.Point(0, 1.7));
           return;
         } else {
-          man.position.y = 235;
           man.place = 'lift';
+          man.position.y = 235;
+          man.move();
         }
       } else if (man.position.x >= 474 && man.mode === 'walkRight') {
         showInfo();
