@@ -154,7 +154,7 @@ GuysPool.prototype.onMessage = function onMessage(channel, data) {
   }
 
   if (msg[0] === 'bootstrap:reply' && msg[1] !== this.id) {
-    msg[1].forEach(function(guy) {
+    msg[2].forEach(function(guy) {
       if (self.map[guy.id]) return;
       self.insert(guy);
     });
