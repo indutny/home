@@ -166,7 +166,7 @@
     var self = this;
     clearTimeout(this.message.timeout);
     this.message.timeout = setTimeout(function() {
-      self.message.visible = false;
+      self.stopSaying();
     }, 8500);
 
     if (this === man) socket.emit('guy:say', text);
