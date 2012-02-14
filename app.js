@@ -45,14 +45,15 @@ if (cluster.isMaster) {
     });
   });
 
-  var sticky = [];
+  var sticky = [],
+      stickyId = 0;
 
   net.createServer(function(c) {
     var worker,
         id = c.remoteAddress.replace(/^.+\./, '');
 
     if (!sticky[id]) {
-      sticky[id] = workers[(~~Math.random() * 1e9) % workers.length];
+      sticky[id] = stickyId++ % workers.length;
     }
     worker = sticky[id];
 
