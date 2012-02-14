@@ -177,7 +177,7 @@ GuysPool.prototype.onMessage = function onMessage(channel, data) {
           guy = self.map[data.id];
 
       if (type === 'enter' && !guy) {
-        self.insert(data, true);
+        self.insert(data);
         return;
       }
       if (!guy) return;
