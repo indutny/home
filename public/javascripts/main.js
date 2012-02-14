@@ -122,7 +122,7 @@
     this._changed = false;
     this.place = 'basement';
 
-    this.move(paper.view.center.add(-220, 36));
+    this.move(paper.view.center.add(-220, 62));
   };
 
   Man.prototype.activate = function activate(mode) {
@@ -210,11 +210,12 @@
 
     if (man.place === 'basement') {
       if (man.position.x > 79) {
-        if (man.position.y >= 124) {
-          man.add(new paper.Point(0, -1.5));
+        if (man.position.y - 1.7 >= 123) {
+          man.add(new paper.Point(0, -1.7));
           return;
         } else {
           man.place = 'lift';
+          man.position.y = 123;
         }
       } else if (man.position.x <= 22 && man.mode === 'walkLeft') {
         return;
@@ -236,10 +237,11 @@
       }
     } else if (man.place === 'roof') {
       if (man.position.x <= 82) {
-        if (man.position.y <= 209) {
-          man.add(new paper.Point(0, 1.5));
+        if (man.position.y + 1.7 <= 235) {
+          man.add(new paper.Point(0, 1.7));
           return;
         } else {
+          man.position.y = 235;
           man.place = 'lift';
         }
       } else if (man.position.x >= 474 && man.mode === 'walkRight') {
