@@ -177,7 +177,7 @@ GuysPool.prototype.onMessage = function onMessage(channel, data) {
           guy = self.map[data.id];
 
       if (type === 'enter' && !guy) {
-        self.insert(data);
+        self.insert(data, true);
         return;
       }
       if (!guy) return;
@@ -212,7 +212,7 @@ GuysPool.prototype.manageIo = function manageIo(io) {
     self.pool.forEach(function(guy) {
       self.notifyEnter(guy, bulk);
     });
-    socket.emit(['bulk', bulk]);
+    socket.emit('bulk', bulk);
 
     self.broadcast('enter', { id: socket.id, pid: self.id });
 
