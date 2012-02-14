@@ -162,17 +162,26 @@
       this.message.content = this.message.content.slice(0, 32) + '...';
     }
     this.message.visible = true;
+
+    var self = this;
+    clearTimeout(this.message.timeout);
+    this.message.timeout = setTimeout(function() {
+      self.message.visible = false;
+    }, 8500);
+
     if (this === man) socket.emit('guy:say', text);
   };
 
   Man.prototype.backspaceSaying = function backspaceSaying() {
     this.message.content = this.message.content.slice(0, -1);
+    clearTimeout(this.message.timeout);
     if (this === man) socket.emit('guy:backspaceSaying');
   };
 
   Man.prototype.stopSaying = function stopSaying() {
     this.message.content = '';
     this.message.visible = false;
+    clearTimeout(this.message.timeout);
     if (this === man) socket.emit('guy:stopSaying');
   };
 
