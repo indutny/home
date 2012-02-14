@@ -313,9 +313,8 @@
 
   // Chat messaging
   window.addEventListener('keypress', function(e) {
-    var char = String.fromCharCode(e.keyCode);
-
     if (e.keyCode === 13) return man.stopSaying();
+    var char = String.fromCharCode(e.charCode);
     if (!/[\w\s\.?!,&^%$#@<>(){}"':\\/;]/.test(char)) return;
 
     man.say(char);
