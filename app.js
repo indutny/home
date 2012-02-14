@@ -36,7 +36,14 @@ io = io.listen(app);
 io.disable('log');
 
 // App-Specific stuff
-require('./home/realtime').init(io);
+require('./home/realtime').init(io, {
+  redis: {
+    port: +process.env['DB-MAIN-PORT'] || 6379,
+    host: +process.env['DB-MAIN-HOST'] || 'localhost',
+    password: process.env['DB-MAIN-PASSWORD'],
+    channel: 'guys'
+  }
+});
 
 app.listen(3000);
 console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);

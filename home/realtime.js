@@ -39,11 +39,15 @@ function GuysPool(io, options) {
 util.inherits(GuysPool, process.EventEmitter);
 
 GuysPool.prototype._createRedis = function _createRedis() {
-  return redis.createClient(
+  var client = redis.createClient(
     this.options.redis.port,
     this.options.redis.host,
     this.options.redis
   );
+  if (this.options.redis.password) {
+    client.auth(this.options.redis.password);
+  }
+  return client;
 };
 
 GuysPool.prototype.onMessage = function onMessage(channel, data) {
@@ -134,10 +138,6 @@ GuysPool.prototype.broadcast = function broadcast(type, data) {
   this.buffer.push([type, data]);
 };
 
-exports.init = function init(io) {
-  var pool = new GuysPool(io, {
-    redis: {
-      channel: 'guys'
-    }
-  });
+exports.init = function init(io, options) {
+  var pool = new GuysPool(io, options);
 };

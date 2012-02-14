@@ -8,5 +8,8 @@
     "socket.io": "0.8.x",
     "redis": "0.7.x",
     "hiredis": "0.1.x"
+  },
+  "databases": {
+    "main": "redis"
   }
 }
