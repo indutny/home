@@ -131,7 +131,7 @@
     this._index = 0;
     this.tick();
     this.draw();
-    if (this === man) socket.emit('guy:mode', mode);
+    if (this === man) socket.emit('mode', mode);
   };
 
   Man.prototype.remove = function remove() {
@@ -142,14 +142,15 @@
   Man.prototype.move = function move(pos) {
     if (pos) {
       if (this.position) {
-        this.position = pos;
+        this.position.x = pos.x;
+        this.position.y = pos.y;
       } else {
         this.position = new paper.Point(pos);
       }
     }
     this.message.position = this.position.add({ x: 0, y: -40 });
     if (this === man) {
-      socket.emit('guy:move', { x: this.position.x, y: this.position.y });
+      socket.emit('move', { x: this.position.x, y: this.position.y });
     }
   };
 
@@ -158,7 +159,7 @@
     this.position = this.position.add(vector);
     this.message.position = this.position.add({ x: 0, y: -40 });
     if (this === man) {
-      socket.emit('guy:move', { x: this.position.x, y: this.position.y });
+      socket.emit('move', { x: this.position.x, y: this.position.y });
     }
   };
 
@@ -175,20 +176,20 @@
       self.stopSaying();
     }, 8500);
 
-    if (this === man) socket.emit('guy:say', text);
+    if (this === man) socket.emit('say', text);
   };
 
   Man.prototype.backspaceSaying = function backspaceSaying() {
     this.message.content = this.message.content.slice(0, -1);
     clearTimeout(this.message.timeout);
-    if (this === man) socket.emit('guy:backspaceSaying');
+    if (this === man) socket.emit('backspaceSaying');
   };
 
   Man.prototype.stopSaying = function stopSaying() {
     this.message.content = '';
     this.message.visible = false;
     clearTimeout(this.message.timeout);
-    if (this === man) socket.emit('guy:stopSaying');
+    if (this === man) socket.emit('stopSaying');
   };
 
   Man.prototype.tick = function tick() {
@@ -343,13 +344,13 @@
   }, true);
 
   // Displaying ghosts
-  socket.on('guy:enter', function(guy) {
+  function onGuyEnter(guy) {
     // Ignore myself
     if (guy.id === socket.socket.sessionid) return;
     ghosts.push(ghostsMap[guy.id] = new Man());
-  });
+  };
 
-  socket.on('guy:leave', function(guy) {
+  function onGuyLeave(guy) {
     if (!ghostsMap[guy.id]) return;
     var ghost = ghostsMap[guy.id],
         index = ghosts.indexOf(ghost);
@@ -359,31 +360,46 @@
 
     if (index === -1) return;
     ghosts.splice(index, 1);
-  });
+  };
 
-  socket.on('guy:mode', function(guy) {
+  function onGuyMode(guy) {
     if (!ghostsMap[guy.id]) return;
     ghostsMap[guy.id].activate(guy.mode);
-  });
+  };
 
-  socket.on('guy:move', function(guy) {
+  function onGuyMove(guy) {
     if (!ghostsMap[guy.id]) return;
     ghostsMap[guy.id].move(guy.position);
-  });
+  };
 
-  socket.on('guy:say', function(guy) {
+  function onGuySay(guy) {
     if (!ghostsMap[guy.id]) return;
     ghostsMap[guy.id].say(guy.text);
-  });
+  };
 
-  socket.on('guy:backspaceSaying', function(guy) {
+  function onGuyBackspaceSaying(guy) {
     if (!ghostsMap[guy.id]) return;
     ghostsMap[guy.id].backspaceSaying();
-  });
+  };
 
-  socket.on('guy:stopSaying', function(guy) {
+  function onGuyStopSaying(guy) {
     if (!ghostsMap[guy.id]) return;
     ghostsMap[guy.id].stopSaying();
+  };
+
+  socket.on('bulk', function(bulk) {
+    bulk.forEach(function(msg) {
+      var type = msg[0],
+          data = msg[1];
+
+      if (type === 'enter') return onGuyEnter(data);
+      if (type === 'leave') return onGuyLeave(data);
+      if (type === 'mode') return onGuyMode(data);
+      if (type === 'move') return onGuyMove(data);
+      if (type === 'say') return onGuySay(data);
+      if (type === 'backspaceSaying') return onGuyBackspaceSaying(data);
+      if (type === 'stopSaying') return onGuyStopSaying(data);
+    });
   });
 
   paper.view.draw();

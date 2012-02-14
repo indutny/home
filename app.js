@@ -44,30 +44,37 @@ function Guy(id) {
   this.position = { x: 0, y: 0 };
 };
 
-io.sockets.on('connection', function(socket) {
-  io.sockets.emit('guy:enter', { id: socket.id });
+var buffer = [];
 
+io.sockets.on('connection', function(socket) {
+  buffer.push([ 'enter', { id: socket.id } ]);
+
+  var bulk = [];
   guys.forEach(function(guy) {
-    socket.emit('guy:enter', { id: guy.id });
-    socket.emit('guy:mode', { id: guy.id, mode: guy.mode });
-    socket.emit('guy:move', { id: guy.id, position: guy.position });
+    bulk.push(['enter', { id: guy.id }]);
+    bulk.push(['mode', { id: guy.id, mode: guy.mode }]);
+    bulk.push(['move', { id: guy.id, position: guy.position }]);
     if (guy.text) {
-      socket.emit('guy:say', { id: guy.id, text: guy.text });
+      bulk.push(['say', { id: guy.id, text: guy.text }]);
     }
   });
+  if (bulk.length > 0) {
+    socket.emit('bulk', bulk);
+  }
+
   guys.push(guysMap[socket.id] = new Guy(socket.id));
 
-  socket.on('guy:mode', function(mode) {
+  socket.on('mode', function(mode) {
     guysMap[socket.id].mode = mode;
-    io.sockets.emit('guy:mode', { id: socket.id, mode: mode });
+    buffer.push([ 'mode', { id: socket.id, mode: mode } ]);
   });
 
-  socket.on('guy:move', function(position) {
+  socket.on('move', function(position) {
     guysMap[socket.id].position = position;
-    io.sockets.emit('guy:move', { id: socket.id, position: position });
+    buffer.push([ 'move', { id: socket.id, position: position } ]);
   });
 
-  socket.on('guy:say', function(text) {
+  socket.on('say', function(text) {
     var guy = guysMap[socket.id];
     guy.text += text;
 
@@ -75,26 +82,33 @@ io.sockets.on('connection', function(socket) {
     if (guy.text.length > 32) {
       guy.text = guy.text.slice(0, 32) + '...';
     }
-    io.sockets.emit('guy:say', { id: socket.id, text: text });
+    buffer.push([ 'say', { id: socket.id, text: text } ]);
   });
 
-  socket.on('guy:backspaceSaying', function() {
+  socket.on('backspaceSaying', function() {
     guysMap[socket.id].text = guysMap[socket.id].text.slice(0, -1);
-    io.sockets.emit('guy:backspaceSaying', { id: socket.id });
+    buffer.push([ 'backspaceSaying', { id: socket.id } ]);
   });
 
-  socket.on('guy:stopSaying', function() {
+  socket.on('stopSaying', function() {
     guysMap[socket.id].text = '';
-    io.sockets.emit('guy:stopSaying', { id: socket.id });
+    buffer.push([ 'stopSaying', { id: socket.id } ]);
   });
 
   socket.on('disconnect', function() {
     var guy = guysMap[socket.id];
     delete guysMap[socket.id];
     guys.splice(guys.indexOf(guy), 1);
-    io.sockets.emit('guy:leave', { id: socket.id });
+    buffer.push([ 'leave', { id: socket.id } ]);
   });
 });
+
+setInterval(function() {
+  if (buffer.length > 0) {
+    io.sockets.emit('bulk', buffer);
+  }
+  buffer = [];
+}, 20);
 
 io.disable('log');
 
