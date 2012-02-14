@@ -148,5 +148,6 @@ section#contacts .contact.twitter {
 section#content canvas {
   top: 0;
   left: 0;
+  z-index: 2;
   position: absolute;
 }

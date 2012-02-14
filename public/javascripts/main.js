@@ -108,6 +108,12 @@
       right: [[75, 80], [83, 85], [90, 90], [94, 102], [97, 110]]
     });
 
+    this.message = new paper.PointText({ x: 0, y: 0 });
+    this.message.fillColor = 'black';
+    this.message.content = '';
+    this.message.paragraphStyle.justification = 'center';
+    this.message.visible = false;
+
     this.mode = undefined;
     this._active = undefined;
     this._current = undefined;
@@ -115,7 +121,6 @@
     this.position = undefined;
     this._changed = false;
     this.place = 'basement';
-    this.activate('standby');
 
     this.move(paper.view.center.add(-220, 36));
   };
@@ -131,22 +136,47 @@
 
   Man.prototype.remove = function remove() {
     if (this._current) this._current.group.remove();
+    this.message.remove();
   };
 
   Man.prototype.move = function move(pos) {
     this.position = pos;
+    this.message.position = this.position.add({ x: 0, y: -40 });
   };
 
   Man.prototype.add = function add(vector) {
     this._changed = true;
     this.position = this.position.add(vector);
+    this.message.position = this.position.add({ x: 0, y: -40 });
     if (this === man) {
       socket.emit('guy:move', { x: this.position.x, y: this.position.y });
     }
   };
 
+  Man.prototype.say = function say(text) {
+    this.message.content += text;
+    if (this.message.content.length > 32) {
+      this.message.content = this.message.content.slice(0, 32) + '...';
+    }
+    this.message.visible = true;
+    if (this === man) socket.emit('guy:say', text);
+  };
+
+  Man.prototype.backspaceSaying = function backspaceSaying() {
+    this.message.content = this.message.content.slice(0, -1);
+    if (this === man) socket.emit('guy:backspaceSaying');
+  };
+
+  Man.prototype.stopSaying = function stopSaying() {
+    this.message.content = '';
+    this.message.visible = false;
+    if (this === man) socket.emit('guy:stopSaying');
+  };
+
   Man.prototype.tick = function tick() {
     this._changed = true;
+    if (!this.mode) this.activate('standby');
+
     this._index = (this._index + 1) % this._active.length;
     if (this._current) this._current.group.visible = false;
     this._current = this._active[this._index];
@@ -252,7 +282,15 @@
   };
 
   window.addEventListener('keydown', function(e) {
+    // Process backspace
+    if (e.keyCode === 8) {
+      e.preventDefault();
+      man.backspaceSaying();
+      return false;
+    }
+
     var key = keyMap[e.keyCode];
+
     if (!key) return;
 
     if (man.mode !== 'standby') return;
@@ -271,6 +309,17 @@
         key === 'right' && man.mode === 'walkRight') {
       man.activate('standby');
     }
+  }, true);
+
+  // Chat messaging
+  window.addEventListener('keypress', function(e) {
+    var char = String.fromCharCode(e.keyCode);
+
+    if (e.keyCode === 13) return man.stopSaying();
+    if (!/[\w\s\.?!,&^%$#@<>(){}"':\\/;]/.test(char)) return;
+
+    man.say(char);
+    e.preventDefault();
   }, true);
 
   // Displaying ghosts
@@ -300,6 +349,21 @@
   socket.on('guy:move', function(guy) {
     if (!ghostsMap[guy.id]) return;
     ghostsMap[guy.id].move(new paper.Point(guy.position));
+  });
+
+  socket.on('guy:say', function(guy) {
+    if (!ghostsMap[guy.id]) return;
+    ghostsMap[guy.id].say(guy.text);
+  });
+
+  socket.on('guy:backspaceSaying', function(guy) {
+    if (!ghostsMap[guy.id]) return;
+    ghostsMap[guy.id].backspaceSaying();
+  });
+
+  socket.on('guy:stopSaying', function(guy) {
+    if (!ghostsMap[guy.id]) return;
+    ghostsMap[guy.id].stopSaying();
   });
 
   paper.view.draw();
