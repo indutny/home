@@ -117,12 +117,16 @@ GuysPool.prototype.insert = function insert(guy, silent) {
   if (!silent) this.notifyEnter(guyObj);
 };
 
-GuysPool.prototype.notifyEnter = function notifyEnter(guy) {
-  this.broadcast('enter', { id: guy.id, pid: this.id });
-  this.broadcast('mode', { id: guy.id, pid: this.id, mode: guy.mode });
-  this.broadcast('move', { id: guy.id, pid: this.id, position: guy.position });
+GuysPool.prototype.notifyEnter = function notifyEnter(guy, bulk) {
+  this.broadcast('enter', { id: guy.id, pid: this.id }, bulk);
+  this.broadcast('mode', { id: guy.id, pid: this.id, mode: guy.mode }, bulk);
+  this.broadcast('move', {
+    id: guy.id,
+    pid: this.id,
+    position: guy.position
+  }, bulk);
   if (guy.text) {
-    this.broadcast('say', { id: guy.id, pid: this.id, text: guy.text });
+    this.broadcast('say', { id: guy.id, pid: this.id, text: guy.text }, bulk);
   }
 };
 
@@ -204,9 +208,11 @@ GuysPool.prototype.onMessage = function onMessage(channel, data) {
 GuysPool.prototype.manageIo = function manageIo(io) {
   var self = this;
   io.sockets.on('connection', function(socket) {
+    var bulk = [];
     self.pool.forEach(function(guy) {
-      self.notifyEnter(guy);
+      self.notifyEnter(guy, bulk);
     });
+    socket.emit(['bulk', bulk]);
 
     self.broadcast('enter', { id: socket.id, pid: self.id });
 
@@ -240,8 +246,8 @@ GuysPool.prototype.manageIo = function manageIo(io) {
   });
 };
 
-GuysPool.prototype.broadcast = function broadcast(type, data) {
-  this.buffer.push([type, data]);
+GuysPool.prototype.broadcast = function broadcast(type, data, acc) {
+  (acc || this.buffer).push([type, data]);
 };
 
 exports.init = function init(io, options) {
