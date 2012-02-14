@@ -144,12 +144,12 @@ GuysPool.prototype.onMessage = function onMessage(channel, data) {
   if (msg[0] === 'bootstrap') {
     this.publish.publish(
       this.options.redis.channel,
-      JSON.stringify(['bootstrap:reply', this.pool])
+      JSON.stringify(['bootstrap:reply', this.id, this.pool])
     );
     return;
   }
 
-  if (msg[0] === 'bootstrap:reply') {
+  if (msg[0] === 'bootstrap:reply' && msg[1] !== this.id) {
     msg[1].forEach(function(guy) {
       if (self.map[guy.id]) return;
       self.insert(guy);
