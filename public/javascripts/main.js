@@ -318,7 +318,6 @@
     if (!/[\w\s\.?!,&^%$#@<>(){}"':\\/;]/.test(char)) return;
 
     man.say(char);
-    e.preventDefault();
   }, true);
 
   // Displaying ghosts
