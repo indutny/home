@@ -7,7 +7,8 @@
     "jade": ">= 0.0.1",
     "socket.io": "0.8.x",
     "redis": "0.7.x",
-    "hiredis": "0.1.x"
+    "hiredis": "0.1.x",
+    "sticky-session": "0.0.x"
   },
   "databases": {
     "main": "redis"

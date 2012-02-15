@@ -3,11 +3,10 @@
  * Module dependencies.
  */
 
-var net = require('net'),
+var sticky = require('sticky-session'),
     os = require('os'),
     express = require('express'),
     io = require('socket.io'),
-    cluster = require('cluster'),
     routes = require('./routes');
 
 var app = module.exports = express.createServer();
@@ -35,33 +34,7 @@ app.configure('production', function(){
 
 app.get('/', routes.index);
 
-if (cluster.isMaster) {
-  var workers = [];
-  os.cpus().forEach(function(cpu, i) {
-    workers[i] = cluster.fork();
-    workers[i].on('exit', function() {
-      console.error('worker died');
-      workers[i] = cluster.fork();
-    });
-  });
-
-  var sticky = [],
-      stickyId = 0;
-
-  net.createServer(function(c) {
-    var worker,
-        id = c.remoteAddress.replace(/^.+\./, '');
-
-    if (!sticky[id]) {
-      sticky[id] = workers[stickyId++ % workers.length];
-    }
-    worker = sticky[id];
-
-    c.pause();
-    worker.send('connection', c._handle);
-    c._handle.close();
-  }).listen(3000);
-} else {
+sticky(function() {
   io = io.listen(app);
   io.disable('log');
 
@@ -75,17 +48,9 @@ if (cluster.isMaster) {
     }
   });
 
-  var Buffer = require('buffer').Buffer;
-  process.on('message', function(msg, handle) {
-    if (msg === 'connection') {
-      var socket = new net.Socket({ handle: handle });
-      socket.writable = true;
-      socket.readable = true;
-      socket.pause();
-      socket.resume();
-      app.emit('connection', socket);
-    }
-  });
-
-  app.listen(null);
-}
+  return app;
+}).listen(3000, function() {
+  if (this.address) {
+    console.log('Started listening on port: %d', this.address().port);
+  }
+});
