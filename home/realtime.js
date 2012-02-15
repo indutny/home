@@ -17,9 +17,11 @@ function Guy(pool, pid, id) {
 Guy.prototype.ping = function ping() {
   if (this.destroyed) return;
 
+  console.log('ping %d', this.id);
   var self = this;
   clearTimeout(this.timeout);
   this.timeout = setTimeout(function() {
+    console.log('ping timeout %d', this.id);
     self.destroyed = true;
     self.pool.remove(self);
   }, 30000);
