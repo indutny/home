@@ -22,7 +22,7 @@ Guy.prototype.ping = function ping() {
   this.timeout = setTimeout(function() {
     self.destroyed = true;
     self.pool.remove(self);
-  }, 5000);
+  }, 30000);
 };
 
 function PMap(pool, pid) {
@@ -86,7 +86,7 @@ function GuysPool(io, options) {
       JSON.stringify(['bulk', self.buffer])
     );
     self.buffer = [];
-  }, 20);
+  }, 7);
 
   this.keepAliveTimer = setInterval(function() {
     self.publish.publish(

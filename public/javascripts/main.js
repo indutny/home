@@ -409,7 +409,7 @@
 
   setInterval(function() {
     socket.emit('ping');
-  }, 1000);
+  }, 3000);
 
   paper.view.draw();
 }();
