@@ -126,6 +126,8 @@
   };
 
   Man.prototype.activate = function activate(mode) {
+    if (!this[mode]) return;
+
     this._active = this[mode];
     this.mode = mode;
     this._index = 0;
@@ -196,7 +198,9 @@
     this._changed = true;
     if (!this.mode) this.activate('standby');
 
-    this._index = (this._index + 1) % this._active.length;
+    if (this._active) {
+      this._index = (this._index + 1) % this._active.length;
+    }
     if (this._current) this._current.group.visible = false;
     this._current = this._active[this._index];
     this._current.group.visible = true;
