@@ -170,9 +170,18 @@ GuysPool.prototype.onMessage = function onMessage(channel, data) {
 
   if (msg[0] === 'bootstrap') {
     if (msg[1] === this.id) return;
+    var pool = this.pool.map(function(guy) {
+      return {
+        id: guy.id,
+        pid: guy.pid,
+        position: guy.position,
+        mode: guy.mode,
+        text: guy.text
+      };
+    });
     this.publish.publish(
       this.options.redis.channel,
-      JSON.stringify(['bootstrap:reply', msg[1], this.pool])
+      JSON.stringify(['bootstrap:reply', msg[1], pool])
     );
     return;
   }

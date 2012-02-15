@@ -356,6 +356,12 @@
   };
 
   function onGuyLeave(guy) {
+    // I was kicked - refresh page
+    if (guy.id === socket.socket.sessionid) {
+      location.reload(true);
+      return;
+    }
+
     if (!ghostsMap[guy.id]) return;
     var ghost = ghostsMap[guy.id],
         index = ghosts.indexOf(ghost);
