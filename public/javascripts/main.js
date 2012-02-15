@@ -349,8 +349,6 @@
 
   // Displaying ghosts
   function onGuyEnter(guy) {
-    if (window.console) console.log(guy.id);
-
     // Ignore myself
     if (guy.id === socket.socket.sessionid) return;
     if (ghostsMap[guy.id]) return;
