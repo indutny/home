@@ -35,7 +35,7 @@ app.configure('production', function(){
 
 app.get('/', routes.index);
 
-sticky(function() {
+sticky(1, function() {
   io = io.listen(app);
   io.disable('log');
 
