@@ -360,6 +360,8 @@
     var ghost = ghostsMap[guy.id],
         index = ghosts.indexOf(ghost);
 
+    if (index === -1) return;
+
     ghost.remove();
     delete ghostsMap[guy.id];
 

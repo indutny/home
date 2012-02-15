@@ -152,6 +152,9 @@ GuysPool.prototype.notifyEnter = function notifyEnter(guy, bulk) {
 
 GuysPool.prototype.remove = function remove(guy, silent) {
   var index = this.pool.indexOf(guy);
+
+  if (index === -1) return;
+
   this.pool.splice(index, 1);
   delete this.map[guy.id];
   if (this.pmap[guy.pid]) {
