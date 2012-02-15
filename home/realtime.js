@@ -1,13 +1,28 @@
 var util = require('util'),
     redis = require('redis');
 
-function Guy(pid, id) {
+function Guy(pool, pid, id) {
+  this.pool = pool;
   this.pid = pid;
   this.id = id;
   this.mode = 'standby';
   this.text = '';
   this.position = { x: 0, y: 0 };
   this.timeout = undefined;
+  this.destroyed = false;
+
+  this.ping();
+};
+
+Guy.prototype.ping = function ping() {
+  if (this.destroyed) return;
+
+  var self = this;
+  clearTimeout(this.timeout);
+  this.timeout = setTimeout(function() {
+    self.destroyed = true;
+    self.pool.remove(self);
+  }, 5000);
 };
 
 function PMap(pool, pid) {
@@ -15,11 +30,14 @@ function PMap(pool, pid) {
   this.pid = pid;
   this.guys = {};
 
+  this.destroyed = false;
   this.timer = undefined;
   this.ping();
 };
 
 PMap.prototype.ping = function ping() {
+  if (this.destroyed) return;
+
   var self = this;
   clearTimeout(this.timer);
   this.timer = setTimeout(function() {
@@ -28,6 +46,8 @@ PMap.prototype.ping = function ping() {
 };
 
 PMap.prototype.remove = function remove() {
+  this.destroyed = true;
+
   delete this.pool.pmap[this.pid];
 
   var self = this,
@@ -99,7 +119,7 @@ GuysPool.prototype._createRedis = function _createRedis() {
 };
 
 GuysPool.prototype.insert = function insert(guy, silent) {
-  var guyObj = new Guy(guy.pid, guy.id);
+  var guyObj = new Guy(this, guy.pid, guy.id);
 
   if (guy.mode) {
     guyObj.mode = guy.mode;
@@ -179,16 +199,14 @@ GuysPool.prototype.onMessage = function onMessage(channel, data) {
           guy = self.map[data.id];
 
       if (type === 'enter' && !guy) {
-        console.log(type, data);
-        console.log('----------');
         self.insert(data, true);
         return;
       }
       if (!guy) return;
 
-      if (type === 'leave') {
-        console.log(type, data);
-        console.log('----------');
+      if (type === 'ping') {
+        guy.ping();
+      } else if (type === 'leave') {
         self.remove(guy, true);
       } else if (type === 'mode') {
         guy.mode = data.mode;
@@ -222,6 +240,10 @@ GuysPool.prototype.manageIo = function manageIo(io) {
     socket.emit('bulk', bulk);
 
     self.broadcast('enter', { id: socket.id, pid: self.id });
+
+    socket.on('ping', function() {
+      self.broadcast('ping', { id : socket.id });
+    });
 
     socket.on('mode', function(mode) {
       self.broadcast('mode', { id: socket.id, pid: self.id, mode: mode });

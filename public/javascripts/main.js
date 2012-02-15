@@ -407,5 +407,9 @@
     });
   });
 
+  setInterval(function() {
+    socket.emit('ping');
+  }, 1000);
+
   paper.view.draw();
 }();
