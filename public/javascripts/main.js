@@ -400,11 +400,20 @@
     ghostsMap[guy.id].stopSaying();
   };
 
+  var serverVersion;
   socket.on('bulk', function(bulk) {
     bulk.forEach(function(msg) {
       var type = msg[0],
           data = msg[1];
 
+      if (type === 'version') {
+        if (serverVersion === undefined) {
+          serverVersion = data;
+        } else if (serverVersion != data) {
+          // Update was deployed
+          location.reload(true);
+        }
+      }
       if (type === 'enter') return onGuyEnter(data);
       if (type === 'leave') return onGuyLeave(data);
       if (type === 'mode') return onGuyMode(data);

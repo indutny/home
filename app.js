@@ -3,7 +3,8 @@
  * Module dependencies.
  */
 
-var sticky = require('sticky-session'),
+var package = require('./package'),
+    sticky = require('sticky-session'),
     os = require('os'),
     express = require('express'),
     io = require('socket.io'),
@@ -40,6 +41,7 @@ sticky(function() {
 
   // App-Specific stuff
   require('./home/realtime').init(io, {
+    version: package.version,
     redis: {
       port: +process.env['DB-MAIN-PORT'] || 6379,
       host: +process.env['DB-MAIN-HOST'] || 'localhost',

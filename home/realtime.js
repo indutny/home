@@ -61,6 +61,7 @@ PMap.prototype.remove = function remove() {
 function GuysPool(io, options) {
   process.EventEmitter.call(this);
 
+  this.version = options.version;
   this.id = ~~(Math.random() * 1e9);
   this.io = io;
   this.options = options;
@@ -245,7 +246,7 @@ GuysPool.prototype.manageIo = function manageIo(io) {
   var self = this;
 
   io.sockets.on('connection', function(socket) {
-    var bulk = [];
+    var bulk = [ ['version', self.version] ];
     self.pool.forEach(function(guy) {
       self.notifyEnter(guy, bulk);
     });
