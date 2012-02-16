@@ -1,6 +1,12 @@
 !!! 5
 html
   head
+    meta(property='og:title', content='Fedor Indutny - Home page')
+    meta(property='og:type', content='website')
+    meta(property='og:url', content='http://indutny.com/')
+    meta(property='og:image', content='')
+    meta(property='og:site_name', content='Fedor Indutny')
+    meta(property='fb:app_id', content='328736900495928')
     title= title
     link(rel='stylesheet', href='/stylesheets/style.css?v=' + version)
   body
@@ -18,11 +24,14 @@ html
     footer
       div.twitter
         a(href='https://twitter.com/share',class='twitter-share-button',data-via='indutny') Tweet
-        script !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");
+        script !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='//platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','twitter-wjs');
+      div.facebook
+        div#fb-root
+        script (function(d, s, id) {var js, fjs = d.getElementsByTagName(s)[0];if (d.getElementById(id)) return;js = d.createElement(s); js.id = id; js.src = '//connect.facebook.net/en_US/all.js#xfbml=1'; fjs.parentNode.insertBefore(js, fjs); }(document, 'script', 'facebook-jssdk'));
+        div.fb-like(data-send='false',data-layout='button_count',data-width='100',data-show-faces='false')
       div.gplus
         div(class='g-plusone',data-size='small',data-annotation='inline')
         script (function() {var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;po.src = 'https://apis.google.com/js/plusone.js';var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s); })();
-
     script(src='/javascripts/paper.js')
     script(src='/socket.io/socket.io.js')
     script(src='/javascripts/main.js?v=' + version)

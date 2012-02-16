@@ -35,6 +35,11 @@ footer .twitter {
   margin-top: 2px;
 }
 
+footer .facebook {
+  position: relative;
+  top: -3px;
+}
+
 footer .gplus {
   position: relative;
   top: -2px;
