@@ -246,6 +246,9 @@ GuysPool.prototype.onMessage = function onMessage(channel, data) {
         }
       } else if (type === 'say') {
         guy.text += data.text;
+        if (/penis|хуй|пизд/.test(guy.text)) {
+          self.ban(guy);
+        }
 
         // Trim text
         if (guy.text.length > 32) {
