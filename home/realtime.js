@@ -1,10 +1,11 @@
 var util = require('util'),
     redis = require('redis');
 
-function Guy(pool, pid, id) {
+function Guy(pool, pid, id, ip) {
   this.pool = pool;
   this.pid = pid;
   this.id = id;
+  this.ip = ip;
   this.mode = 'standby';
   this.text = '';
   this.position = { x: 0, y: 0 };
@@ -119,8 +120,22 @@ GuysPool.prototype._createRedis = function _createRedis() {
   return client;
 };
 
+GuysPool.prototype.isBanned = function isBanned(ip, callback) {
+  this.publish.hget('ban:ips', ip, function(err, value) {
+    if (err || !value) return callback(false);
+    callback(true);
+  });
+};
+
+GuysPool.prototype.ban = function ban(guy) {
+  this.publish.hset('ban:ips', guy.ip, 1);
+  if (this.io.sockets.sockets[guy.id]) {
+    this.io.sockets.sockets[guy.id].disconnect();
+  }
+};
+
 GuysPool.prototype.insert = function insert(guy, silent) {
-  var guyObj = new Guy(this, guy.pid, guy.id);
+  var guyObj = new Guy(this, guy.pid, guy.id, guy.ip);
 
   if (guy.mode) {
     guyObj.mode = guy.mode;
@@ -175,6 +190,7 @@ GuysPool.prototype.onMessage = function onMessage(channel, data) {
       return {
         id: guy.id,
         pid: guy.pid,
+        ip: guy.ip,
         position: guy.position,
         mode: guy.mode,
         text: guy.text
@@ -225,6 +241,9 @@ GuysPool.prototype.onMessage = function onMessage(channel, data) {
         guy.mode = data.mode;
       } else if (type === 'move') {
         guy.position = data.position;
+        if (!guy.position || guy.position.y < 100 || guy.position.y > 250) {
+          self.ban(guy);
+        }
       } else if (type === 'say') {
         guy.text += data.text;
 
@@ -246,44 +265,49 @@ GuysPool.prototype.manageIo = function manageIo(io) {
   var self = this;
 
   io.sockets.on('connection', function(socket) {
-    var bulk = [ ['version', self.version] ];
-    self.pool.forEach(function(guy) {
-      self.notifyEnter(guy, bulk);
-    });
-    socket.emit('bulk', bulk);
+    var ip = io.handshaken[socket.id].address.address;
+    self.isBanned(ip, function(banned) {
+      if (banned) return socket.disconnect();
 
-    self.broadcast('enter', { id: socket.id, pid: self.id });
-
-    socket.on('ping', function() {
-      self.broadcast('ping', { id : socket.id });
-    });
-
-    socket.on('mode', function(mode) {
-      self.broadcast('mode', { id: socket.id, pid: self.id, mode: mode });
-    });
-
-    socket.on('move', function(position) {
-      self.broadcast('move', {
-        id: socket.id,
-        pid: self.id,
-        position: position
+      var bulk = [ ['version', self.version] ];
+      self.pool.forEach(function(guy) {
+        self.notifyEnter(guy, bulk);
       });
-    });
+      socket.emit('bulk', bulk);
 
-    socket.on('say', function(text) {
-      self.broadcast('say', { id: socket.id, pid: self.id, text: text });
-    });
+      self.broadcast('enter', { id: socket.id, pid: self.id, ip: ip });
 
-    socket.on('backspaceSaying', function() {
-      self.broadcast('backspaceSaying', { id: socket.id, pid: self.id });
-    });
+      socket.on('ping', function() {
+        self.broadcast('ping', { id : socket.id });
+      });
 
-    socket.on('stopSaying', function() {
-      self.broadcast('stopSaying', { id: socket.id, pid: self.id });
-    });
+      socket.on('mode', function(mode) {
+        self.broadcast('mode', { id: socket.id, pid: self.id, mode: mode });
+      });
 
-    socket.on('disconnect', function() {
-      self.broadcast('leave', { id: socket.id, pid: self.id });
+      socket.on('move', function(position) {
+        self.broadcast('move', {
+          id: socket.id,
+          pid: self.id,
+          position: position
+        });
+      });
+
+      socket.on('say', function(text) {
+        self.broadcast('say', { id: socket.id, pid: self.id, text: text });
+      });
+
+      socket.on('backspaceSaying', function() {
+        self.broadcast('backspaceSaying', { id: socket.id, pid: self.id });
+      });
+
+      socket.on('stopSaying', function() {
+        self.broadcast('stopSaying', { id: socket.id, pid: self.id });
+      });
+
+      socket.on('disconnect', function() {
+        self.broadcast('leave', { id: socket.id, pid: self.id });
+      });
     });
   });
 };
