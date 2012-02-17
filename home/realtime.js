@@ -246,7 +246,7 @@ GuysPool.prototype.onMessage = function onMessage(channel, data) {
         }
       } else if (type === 'say') {
         guy.text += data.text;
-        if (/penis|хуй|пизд/.test(guy.text)) {
+        if (/penis|ху[йё]|пизд|еба[тн]/i.test(guy.text)) {
           self.ban(guy);
         }
 
