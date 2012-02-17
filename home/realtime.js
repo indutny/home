@@ -240,7 +240,8 @@ GuysPool.prototype.onMessage = function onMessage(channel, data) {
       } else if (type === 'mode') {
         guy.mode = data.mode;
       } else if (type === 'move') {
-        if (guy.position && data.position) {
+        if (guy.position && data.position &&
+            guy.position.x !== 0 && guy.position.y !== 0) {
           var dx = guy.position.x - data.position.x,
               dy = guy.position.y - data.position.y,
               len = dx*dx + dy*dy;
