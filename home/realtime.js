@@ -240,13 +240,20 @@ GuysPool.prototype.onMessage = function onMessage(channel, data) {
       } else if (type === 'mode') {
         guy.mode = data.mode;
       } else if (type === 'move') {
+        if (guy.position && data.position) {
+          var dx = guy.position.x - data.position.x,
+              dy = guy.position.y - data.position.y,
+              len = dx*dx + dy*dy;
+
+          if (len > 50 * 50) self.ban(guy);
+        }
         guy.position = data.position;
         if (!guy.position || guy.position.y < 100 || guy.position.y > 250) {
           self.ban(guy);
         }
       } else if (type === 'say') {
         guy.text += data.text;
-        if (/penis|ху[йё]|пизд|еба[тн]/i.test(guy.text)) {
+        if (/penis|ху[йё]|пизд|еба[тн]|gaynode/i.test(guy.text)) {
           self.ban(guy);
         }
 
