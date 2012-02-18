@@ -8,7 +8,7 @@ function Guy(pool, pid, id, ip) {
   this.ip = ip;
   this.mode = 'standby';
   this.text = '';
-  this.position = { x: 0, y: 0 };
+  this.pos = { x: 0, y: 0 };
   this.timeout = undefined;
   this.destroyed = false;
 
@@ -66,7 +66,6 @@ function GuysPool(io, options) {
   this.id = ~~(Math.random() * 1e9);
   this.io = io;
   this.options = options;
-  this.buffer = [];
   this.pool = [];
   this.map = {};
   this.pmap = {};
@@ -79,16 +78,6 @@ function GuysPool(io, options) {
   this.manageIo(io);
 
   var self = this;
-
-  this.broadcastTimer = setInterval(function() {
-    if (self.buffer.length === 0) return;
-
-    self.publish.publish(
-      self.options.redis.channel,
-      JSON.stringify(['bulk', self.buffer])
-    );
-    self.buffer = [];
-  }, 7);
 
   this.keepAliveTimer = setInterval(function() {
     self.publish.publish(
@@ -139,7 +128,7 @@ GuysPool.prototype.insert = function insert(guy, silent) {
 
   if (guy.mode) {
     guyObj.mode = guy.mode;
-    guyObj.position = guy.position;
+    guyObj.pos = guy.pos;
     guyObj.text = guy.text;
   }
 
@@ -159,7 +148,7 @@ GuysPool.prototype.notifyEnter = function notifyEnter(guy, bulk) {
   this.broadcast('move', {
     id: guy.id,
     pid: this.id,
-    position: guy.position
+    pos: guy.pos
   }, bulk);
   if (guy.text) {
     this.broadcast('say', { id: guy.id, pid: this.id, text: guy.text }, bulk);
@@ -191,7 +180,7 @@ GuysPool.prototype.onMessage = function onMessage(channel, data) {
         id: guy.id,
         pid: guy.pid,
         ip: guy.ip,
-        position: guy.position,
+        pos: guy.pos,
         mode: guy.mode,
         text: guy.text
       };
@@ -240,16 +229,16 @@ GuysPool.prototype.onMessage = function onMessage(channel, data) {
       } else if (type === 'mode') {
         guy.mode = data.mode;
       } else if (type === 'move') {
-        if (guy.position && data.position &&
-            guy.position.x !== 0 && guy.position.y !== 0) {
-          var dx = guy.position.x - data.position.x,
-              dy = guy.position.y - data.position.y,
+        if (guy.pos && data.pos &&
+            guy.pos.x !== 0 && guy.pos.y !== 0) {
+          var dx = guy.pos.x - data.pos.x,
+              dy = guy.pos.y - data.pos.y,
               len = dx*dx + dy*dy;
 
           if (len > 50 * 50) self.ban(guy);
         }
-        guy.position = data.position;
-        if (!guy.position || guy.position.y < 100 || guy.position.y > 250) {
+        guy.pos = data.pos;
+        if (!guy.pos|| guy.pos.y < 100 || guy.pos.y > 250) {
           self.ban(guy);
         }
       } else if (type === 'say') {
@@ -262,9 +251,9 @@ GuysPool.prototype.onMessage = function onMessage(channel, data) {
         if (guy.text.length > 32) {
           guy.text = guy.text.slice(0, 32) + '...';
         }
-      } else if (type === 'backspaceSaying') {
+      } else if (type === 'say:remove') {
         guy.text = guy.text.slice(0, -1);
-      } else if (type === 'stopSaying') {
+      } else if (type === 'say:stop') {
         guy.text = '';
       }
     });
@@ -296,11 +285,11 @@ GuysPool.prototype.manageIo = function manageIo(io) {
         self.broadcast('mode', { id: socket.id, pid: self.id, mode: mode });
       });
 
-      socket.on('move', function(position) {
+      socket.on('move', function(pos) {
         self.broadcast('move', {
           id: socket.id,
           pid: self.id,
-          position: position
+          pos: pos
         });
       });
 
@@ -308,12 +297,12 @@ GuysPool.prototype.manageIo = function manageIo(io) {
         self.broadcast('say', { id: socket.id, pid: self.id, text: text });
       });
 
-      socket.on('backspaceSaying', function() {
-        self.broadcast('backspaceSaying', { id: socket.id, pid: self.id });
+      socket.on('say:remove', function() {
+        self.broadcast('say:remove', { id: socket.id, pid: self.id });
       });
 
-      socket.on('stopSaying', function() {
-        self.broadcast('stopSaying', { id: socket.id, pid: self.id });
+      socket.on('say:stop', function() {
+        self.broadcast('say:stop', { id: socket.id, pid: self.id });
       });
 
       socket.on('disconnect', function() {
@@ -324,7 +313,14 @@ GuysPool.prototype.manageIo = function manageIo(io) {
 };
 
 GuysPool.prototype.broadcast = function broadcast(type, data, acc) {
-  (acc || this.buffer).push([type, data]);
+  if (acc) {
+    acc.push([type, data]);
+  } else {
+    this.publish.publish(
+      this.options.redis.channel,
+      JSON.stringify(['bulk', [[type, data]]])
+    );
+  }
 };
 
 exports.init = function init(io, options) {

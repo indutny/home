@@ -216,14 +216,14 @@
   Man.prototype.backspaceSaying = function backspaceSaying() {
     this.text = this.text.slice(0, -1);
     clearTimeout(this.textTimeout);
-    if (this === man) socket.emit('backspaceSaying');
+    if (this === man) socket.emit('say:remove');
     redraw();
   };
 
   Man.prototype.stopSaying = function stopSaying() {
     this.text = '';
     clearTimeout(this.textTimeout);
-    if (this === man) socket.emit('stopSaying');
+    if (this === man) socket.emit('say:stop');
     redraw();
   };
 
@@ -421,7 +421,7 @@
 
   function onGuyMove(guy) {
     if (!ghostsMap[guy.id]) return;
-    ghostsMap[guy.id].move(guy.position);
+    ghostsMap[guy.id].move(guy.pos);
   };
 
   function onGuySay(guy) {
@@ -458,8 +458,8 @@
       if (type === 'mode') return onGuyMode(data);
       if (type === 'move') return onGuyMove(data);
       if (type === 'say') return onGuySay(data);
-      if (type === 'backspaceSaying') return onGuyBackspaceSaying(data);
-      if (type === 'stopSaying') return onGuyStopSaying(data);
+      if (type === 'say:remove') return onGuyBackspaceSaying(data);
+      if (type === 'say:stop') return onGuyStopSaying(data);
     });
   });
 
