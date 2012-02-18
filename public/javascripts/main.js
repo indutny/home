@@ -379,7 +379,7 @@
   window.addEventListener('keypress', function(e) {
     if (e.keyCode === 13) return man.stopSaying();
     var char = String.fromCharCode(e.charCode);
-    if (!char) return;
+    if (!char || !e.charCode) return;
 
     man.say(char);
   }, true);
