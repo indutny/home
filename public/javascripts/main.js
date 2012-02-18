@@ -234,6 +234,7 @@
       this._index = (this._index + 1) % this._active.length;
     }
     this._current = this._active[this._index];
+    redraw();
   };
 
   Man.prototype.draw = function draw() {
