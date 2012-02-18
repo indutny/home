@@ -1,6 +1,15 @@
 !function() {
-  paper.setup('drawer');
-  var socket = io.connect();
+  var requestFrame = window.requestAnimationFrame ||
+                     window.mozRequestAnimationFrame ||
+                     window.webkitRequestAnimationFrame ||
+                     window.msRequestAnimationFrame,
+      canvas = document.getElementById('drawer'),
+      ctx = canvas.getContext('2d'),
+      socket = io.connect();
+
+  ctx.fillStyle = 'black';
+  ctx.lineWidth = 1.5;
+  ctx.textAlign = 'center';
 
   var length = {
     hand: 4.5,
@@ -8,8 +17,10 @@
   };
 
   function ManPath(head, hands, legs) {
-    this.group = new paper.Group();
-    this.group.visible = false;
+    this.position = {
+      x: 0,
+      y: 0
+    };
 
     if (head === 'left') {
       this.head = this.line([[6, -90], [2, -45]]);
@@ -19,56 +30,81 @@
     this.body = this.line([[8, 90]]);
     this.hands = {
       left: this.line([
-        [-length.hand, hands.left[0]],
-        [-length.hand, hands.left[1]]
+        [length.hand, hands.left[0]],
+        [length.hand, hands.left[1]]
       ]),
       right: this.line([
-        [-length.hand, hands.right[0]],
-        [-length.hand, hands.right[1]]
+        [length.hand, hands.right[0]],
+        [length.hand, hands.right[1]]
       ])
     };
     this.legs = {
       left: this.line(
-        this.body.lastSegment.point,
+        this.body[this.body.length - 1],
         [[length.leg, legs.left[0]], [length.leg, legs.left[1]]]
       ),
       right: this.line(
-        this.body.lastSegment.point,
+        this.body[this.body.length - 1],
         [[length.leg, legs.right[0]], [length.leg, legs.right[1]]]
       )
     };
 
-    this.group.addChildren([
+    this.lines = [
       this.head,
       this.body,
       this.hands.left,
       this.hands.right,
       this.legs.left,
       this.legs.right
-    ]);
+    ];
+
+    this.height = this.lines.reduce(function(max, line) {
+      return line.reduce(function(max, point) {
+        return Math.max(max, point.y);
+      }, max);
+    }, 0) - this.lines.reduce(function(min, line) {
+      return line.reduce(function(min, point) {
+        return Math.min(min, point.y);
+      }, min);
+    }, 0);
   };
 
   ManPath.prototype.line = function line(from, positions) {
     if (positions === undefined) {
       positions = from;
-      from = this.group.position;
+      from = { x: this.position.x, y: this.position.y };
     }
 
-    var p = new paper.Path(),
-        last = from;
+    var result = [from];
 
-    p.strokeColor = 'black';
-    p.strokeWidth = 1.5;
-
-    p.add(from);
     positions.forEach(function(pos) {
-      p.add(from = from.add(new paper.Point({
-        length: pos[0],
-        angle: pos[1]
-      })));
+      from = {
+        x: from.x + pos[0] * Math.cos(pos[1] * Math.PI / 180),
+        y: from.y + pos[0] * Math.sin(pos[1] * Math.PI / 180)
+      };
+      result.push(from);
     });
 
-    return p;
+    return result;
+  };
+
+  ManPath.prototype.draw = function draw() {
+    var offsetX = this.position.x,
+        offsetY = this.position.y;
+
+    ctx.save();
+    ctx.beginPath();
+    this.lines.forEach(function(line) {
+      line.forEach(function(point, i) {
+        if (i === 0) {
+          ctx.moveTo(line[i].x + offsetX, line[i].y + offsetY);
+        } else {
+          ctx.lineTo(line[i].x + offsetX, line[i].y + offsetY);
+        }
+      });
+    });
+    ctx.stroke();
+    ctx.restore();
   };
 
   function createManPaths(head, hands, legs) {
@@ -108,21 +144,17 @@
       right: [[75, 80], [83, 85], [90, 90], [94, 102], [97, 110]]
     });
 
-    this.message = new paper.PointText({ x: 0, y: 0 });
-    this.message.fillColor = 'black';
-    this.message.content = '';
-    this.message.paragraphStyle.justification = 'center';
-    this.message.visible = false;
+    this.text = '';
+    this.textTimeout = undefined;
 
     this.mode = undefined;
     this._active = undefined;
     this._current = undefined;
     this._index = 0;
     this.position = undefined;
-    this._changed = false;
     this.place = 'basement';
 
-    this.move(paper.view.center.add(-220, 62));
+    this.move({ x: 40, y: 235 });
   };
 
   Man.prototype.activate = function activate(mode) {
@@ -132,13 +164,8 @@
     this.mode = mode;
     this._index = 0;
     this.tick();
-    this.draw();
     if (this === man) socket.emit('mode', mode);
-  };
-
-  Man.prototype.remove = function remove() {
-    if (this._current) this._current.group.remove();
-    this.message.remove();
+    redraw();
   };
 
   Man.prototype.move = function move(pos) {
@@ -147,75 +174,74 @@
         this.position.x = pos.x;
         this.position.y = pos.y;
       } else {
-        this.position = new paper.Point(pos);
+        this.position = pos;
       }
     }
-    this.message.position = this.position.add({ x: 0, y: -40 });
     if (this === man) {
       socket.emit('move', { x: this.position.x, y: this.position.y });
     }
+    redraw();
   };
 
   Man.prototype.add = function add(vector) {
-    this._changed = true;
-    this.position = this.position.add(vector);
-    this.message.position = this.position.add({ x: 0, y: -40 });
+    this.position.x = this.position.x + vector.x;
+    this.position.y = this.position.y + vector.y;
     if (this === man) {
       socket.emit('move', { x: this.position.x, y: this.position.y });
     }
+    redraw();
   };
 
   Man.prototype.say = function say(text) {
-    this.message.content += text;
-    if (this.message.content.length > 32) {
-      this.message.content = this.message.content.slice(0, 32) + '...';
+    this.text += text;
+    if (this.text.length > 32) {
+      this.text = this.text.slice(0, 32) + '...';
     }
-    this.message.visible = true;
 
     var self = this;
-    clearTimeout(this.message.timeout);
-    this.message.timeout = setTimeout(function() {
+    clearTimeout(this.textTimeout);
+    this.textTimeout = setTimeout(function() {
       self.stopSaying();
     }, 8500);
 
     if (this === man) socket.emit('say', text);
+    redraw();
   };
 
   Man.prototype.backspaceSaying = function backspaceSaying() {
-    this.message.content = this.message.content.slice(0, -1);
-    clearTimeout(this.message.timeout);
+    this.text = this.text.slice(0, -1);
+    clearTimeout(this.textTimeout);
     if (this === man) socket.emit('backspaceSaying');
+    redraw();
   };
 
   Man.prototype.stopSaying = function stopSaying() {
-    this.message.content = '';
-    this.message.visible = false;
-    clearTimeout(this.message.timeout);
+    this.text = '';
+    clearTimeout(this.textTimeout);
     if (this === man) socket.emit('stopSaying');
+    redraw();
   };
 
   Man.prototype.tick = function tick() {
-    this._changed = true;
     if (!this.mode) this.activate('standby');
 
     if (this._active) {
       this._index = (this._index + 1) % this._active.length;
     }
-    if (this._current) this._current.group.visible = false;
     this._current = this._active[this._index];
-    this._current.group.visible = true;
   };
 
   Man.prototype.draw = function draw() {
-    if (!this._changed) return;
-    this._changed = false;
-
     if (!this._current) return;
-    var current = this._current,
-        group = current.group;
+    var current = this._current;
 
-    group.position = this.position;
-    group.position.y -= group.bounds.height;
+    current.position.x = this.position.x;
+    current.position.y = this.position.y - current.height;
+    current.draw();
+
+    if (this.text) {
+      ctx.fillText(this.text, this.position.x, this.position.y - 40);
+    }
   };
 
   var man = new Man(),
@@ -282,11 +308,19 @@
     }
   }, 20);
 
-  paper.view.onFrame = function() {
-    man.draw();
-    ghosts.forEach(function(ghost) {
-      ghost.draw();
-    });
+  function redraw() {
+    requestFrame(function() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      man.draw();
+      ghosts.forEach(function(ghost) {
+        ghost.draw();
+      });
+
+      setTimeout(function() {
+        requestFrame(draw, canvas);
+      }, 5);
+    }, canvas);
   };
 
   var shown = false;
@@ -368,7 +402,6 @@
 
     if (index === -1) return;
 
-    ghost.remove();
     delete ghostsMap[guy.id];
 
     if (index === -1) return;
@@ -427,6 +460,4 @@
   setInterval(function() {
     socket.emit('ping');
   }, 3000);
-
-  paper.view.draw();
 }();
