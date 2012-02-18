@@ -63,7 +63,7 @@ function GuysPool(io, options) {
   process.EventEmitter.call(this);
 
   this.version = options.version;
-  this.id = ~~(Math.random() * 1e9);
+  this.id = (~~(Math.random() * 1e9)).toString(36);
   this.io = io;
   this.options = options;
   this.pool = [];
