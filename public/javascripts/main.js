@@ -7,6 +7,13 @@
       ctx = canvas.getContext('2d'),
       socket = io.connect();
 
+  // No request frame in opera
+  if (!requestFrame) {
+    requestFrame = function(callback) {
+      callback();
+    };
+  }
+
   ctx.fillStyle = 'black';
   ctx.lineWidth = 1.5;
   ctx.textAlign = 'center';
@@ -151,10 +158,8 @@
     this._active = undefined;
     this._current = undefined;
     this._index = 0;
-    this.position = undefined;
+    this.position = { x: 0, y: 0 };
     this.place = 'basement';
-
-    this.move({ x: 40, y: 235 });
   };
 
   Man.prototype.activate = function activate(mode) {
@@ -248,6 +253,8 @@
       ghosts = [],
       ghostsMap = {};
 
+  man.move({ x: 40, y: 235 });
+
   var i = 0;
   setInterval(function() {
     if (i++ % 2 === 0) {
@@ -316,10 +323,6 @@
       ghosts.forEach(function(ghost) {
         ghost.draw();
       });
-
-      setTimeout(function() {
-        requestFrame(draw, canvas);
-      }, 5);
     }, canvas);
   };
 
